@@ -1,4 +1,4 @@
-<?php namespace Zizaco\Entrust\Middleware;
+<?php namespace Zizaco\Entrust;
 
 /**
  * This file is part of Entrust,
@@ -8,43 +8,31 @@
  * @package Zizaco\Entrust
  */
 
-use Closure;
-use Illuminate\Contracts\Auth\Guard;
+use Zizaco\Entrust\Contracts\EntrustPermissionInterface;
+use Zizaco\Entrust\Traits\EntrustPermissionTrait;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Config;
 
-class EntrustPermission
+class EntrustPermission extends Model implements EntrustPermissionInterface
 {
-	const DELIMITER = '|';
+    use EntrustPermissionTrait;
 
-	protected $auth;
+    /**
+     * The database table used by the model.
+     *
+     * @var string
+     */
+    protected $table;
 
-	/**
-	 * Creates a new instance of the middleware.
-	 *
-	 * @param Guard $auth
-	 */
-	public function __construct(Guard $auth)
-	{
-		$this->auth = $auth;
-	}
+    /**
+     * Creates a new instance of the model.
+     *
+     * @param array $attributes
+     */
+    public function __construct(array $attributes = [])
+    {
+        parent::__construct($attributes);
+        $this->table = Config::get('entrust.permissions_table');
+    }
 
-	/**
-	 * Handle an incoming request.
-	 *
-	 * @param  \Illuminate\Http\Request $request
-	 * @param  Closure $next
-	 * @param  $permissions
-	 * @return mixed
-	 */
-	public function handle($request, Closure $next, $permissions)
-	{
-		if (!is_array($permissions)) {
-			$permissions = explode(self::DELIMITER, $permissions);
-		}
-
-		if ($this->auth->guest() || !$request->user()->can($permissions)) {
-			abort(403);
-		}
-
-		return $next($request);
-	}
 }
